@@ -63,7 +63,7 @@ public class OpenCloseFileTransformer implements ClassFileTransformer {
     if (ct == null) return classfileBuffer;
 
     ClassReader cr = new ClassReader(classfileBuffer);
-    ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
     cr.accept(new ClassVisitor(Opcodes.API_VERSION, cw) {
       @Override
       public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
@@ -74,7 +74,7 @@ public class OpenCloseFileTransformer implements ClassFileTransformer {
 
         return methodTransformer.createVisitor(base);
       }
-    }, SKIP_FRAMES);
+    }, ClassReader.EXPAND_FRAMES);
 
     System.out.println("Injected open/close file listeners into " + className);
 
@@ -229,12 +229,13 @@ public class OpenCloseFileTransformer implements ClassFileTransformer {
         for (int i = 0; i < argTypes.length; i++) {
           visitInsn(DUP);
           putConst(i);
-          visitIntInsn(ALOAD, i);
+          visitVarInsn(ALOAD, i);
           visitInsn(AASTORE);
         }
 
         visitMethodInsn(INVOKEVIRTUAL, "java/lang/reflect/Method", "invoke",
             "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", false);
+        visitInsn(POP);
       }
     }
   }
